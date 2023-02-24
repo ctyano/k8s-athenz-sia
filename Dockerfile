@@ -2,8 +2,6 @@ FROM docker.io/golang:1-alpine as builder
 
 WORKDIR /go/src/k8s-athenz-sia
 
-COPY . .
-
 ARG ATHENZ_SIA_VERSION
 ARG ATHENZ_SIA_BUILD_DATE
 ARG ATHENZ_SIA_DEFAULT_ENDPOINT
@@ -14,7 +12,9 @@ ARG ATHENZ_SIA_DEFAULT_ORGANIZATION
 ARG ATHENZ_SIA_DEFAULT_ORGANIZATIONAL_UNIT
 ARG ATHENZ_SIA_DEFAULT_ROLE_CERT_EXPIRY_TIME_BUFFER_MINUTES
 
-RUN apk add --no-cache make
+RUN apk add --no-cache make git
+
+COPY . .
 
 RUN make build
 
@@ -29,11 +29,5 @@ USER nobody
 ENV KEY_FILE /var/run/athenz/service.key.pem
 ENV CERT_FILE /var/run/athenz/service.cert.pem
 ENV CA_CERT_FILE /var/run/athenz/ca.cert.pem
-
-# --interval=DURATION (default: 30s)
-# --timeout=DURATION (default: 30s)
-# --start-period=DURATION (default: 0s)
-# --retries=N (default: 3)
-HEALTHCHECK CMD (stat $SA_TOKEN_FILE) || exit 1
 
 ENTRYPOINT ["/usr/bin/athenz-sia"]

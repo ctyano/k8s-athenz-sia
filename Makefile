@@ -43,10 +43,13 @@ ifneq ($(LDFLAGS_ARGS),)
 LDFLAGS += -ldflags "$(LDFLAGS_ARGS)"
 endif
 
-build:
+update:
+	git submodule update --recursive --init --remote
+
+build: update
 	@echo "Building..."
-	go mod tidy -compat=1.17
-	CGO_ENABLED=0 go build $(LDFLAGS) -o $(GOPATH)/bin/athenz-sia cmd/athenz-sia/*.go
+	go mod tidy
+	go build $(LDFLAGS) -o $(GOPATH)/bin/athenz-sia cmd/athenz-sia/*.go
 
 test: build
 	@echo "Testing..."

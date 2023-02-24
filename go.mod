@@ -1,6 +1,6 @@
 module github.com/AthenZ/k8s-athenz-sia
 
-go 1.19
+go 1.20
 
 replace github.com/AthenZ/k8s-athenz-sia/pkg/identity => ./pkg/identity
 
@@ -9,7 +9,7 @@ replace github.com/AthenZ/k8s-athenz-sia/pkg/k8s => ./pkg/k8s
 replace github.com/AthenZ/k8s-athenz-sia/pkg/metrics => ./pkg/metrics
 
 require (
-	github.com/AthenZ/athenz v1.10.51
+	github.com/AthenZ/athenz v1.10.54
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1

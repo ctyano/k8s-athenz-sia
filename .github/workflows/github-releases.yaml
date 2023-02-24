@@ -1,6 +1,15 @@
 name: Create Github Releases with Packages
 
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
 on:
+  # If any commit message in your push or the HEAD commit of your PR contains the strings
+  # [skip ci], [ci skip], [no ci], [skip actions], or [actions skip]
+  # workflows triggered on the push or pull_request events will be skipped.
+  # https://github.blog/changelog/2021-02-08-github-actions-skip-pull-request-and-push-workflows-with-skip-ci/
   push:
     # Publish semver tags as releases.
     #
@@ -12,6 +21,7 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
     permissions:
       actions: none

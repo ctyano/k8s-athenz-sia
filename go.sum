@@ -36,8 +36,8 @@ cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohl
 cloud.google.com/go/storage v1.8.0/go.mod h1:Wv1Oy7z6Yz3DshWRJFhqM/UCfaWIRTdp0RXyy7KQOVs=
 cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9ullr3+Kg0=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
-github.com/AthenZ/athenz v1.10.51 h1:A5FbPDSgR2qJLt2w+m72fHgoCoYbTP3C6P3+4artcdE=
-github.com/AthenZ/athenz v1.10.51/go.mod h1:W/wrJtPNDLNQToyqIm68KR2zYtsuPTMYCKEVbJ4VbvY=
+github.com/AthenZ/athenz v1.10.54 h1:aS7b9farxq0hkBH0fR2LLsF+AgHCuVvUv+XJfLg0Vpk=
+github.com/AthenZ/athenz v1.10.54/go.mod h1:W/wrJtPNDLNQToyqIm68KR2zYtsuPTMYCKEVbJ4VbvY=
 github.com/Azure/go-autorest v11.1.2+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/Azure/go-autorest v14.2.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/Azure/go-autorest/autorest v0.11.18/go.mod h1:dSiJPy22c3u0OtOKDNttNgqpNFY/GeWa7GH/Pz56QRA=

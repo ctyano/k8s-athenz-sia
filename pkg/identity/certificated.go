@@ -23,9 +23,6 @@ func Certificated(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 		log.Infof("Role certificate provisioning is disabled with empty options: roles[%s], output directory[%s]", idConfig.TargetDomainRoles, idConfig.RoleCertDir)
 	}
 
-	var id *InstanceIdentity
-	var keyPem, certPem []byte
-
 	handler, err := InitIdentityHandler(idConfig)
 	if err != nil {
 		log.Errorf("Failed to initialize client for certificates: %s", err.Error())
@@ -99,6 +96,9 @@ func Certificated(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 	}
 
 	run := func() error {
+
+		var id *InstanceIdentity
+		var keyPem, certPem []byte
 
 		if idConfig.ProviderService != "" {
 			log.Infof("Attempting to request x509 certificate to identity provider[%s]...", idConfig.ProviderService)
