@@ -58,37 +58,42 @@ func InitDefaultValues() {
 
 // IdentityConfig from cmd line args
 type IdentityConfig struct {
-	Init                      bool
-	Endpoint                  string
-	ProviderService           string
-	DNSSuffix                 string
-	Refresh                   time.Duration
-	DelayJitterSeconds        int64
-	KeyFile                   string
-	CertFile                  string
-	CaCertFile                string
-	Backup                    string
-	CertSecret                string
-	Namespace                 string
-	AthenzDomain              string
-	AthenzPrefix              string
-	AthenzSuffix              string
-	ServiceAccount            string
-	SaTokenFile               string
-	PodIP                     string
-	PodUID                    string
-	Reloader                  *util.CertReloader
-	ServerCACert              string
-	TargetDomainRoles         string
-	RoleCertDir               string
-	RoleCertFilenameDelimiter string
-	RoleAuthHeader            string
-	TokenType                 string
-	TokenRefresh              time.Duration
-	TokenServerAddr           string
-	TokenDir                  string
-	MetricsServerAddr         string
-	DeleteInstanceID          bool
+	Init                       bool
+	Endpoint                   string
+	ProviderService            string
+	DNSSuffix                  string
+	Refresh                    time.Duration
+	DelayJitterSeconds         int64
+	KeyFile                    string
+	CertFile                   string
+	CaCertFile                 string
+	Backup                     string
+	CertSecret                 string
+	Namespace                  string
+	AthenzDomain               string
+	AthenzPrefix               string
+	AthenzSuffix               string
+	ServiceAccount             string
+	SaTokenFile                string
+	PodIP                      string
+	PodUID                     string
+	DeleteInstanceID           bool
+	Reloader                   *util.CertReloader
+	ServerCACert               string
+	TargetDomainRoles          string
+	RoleCertDir                string
+	RoleCertFilenameDelimiter  string
+	TokenDir                   string
+	RoleAuthHeader             string
+	TokenType                  string
+	TokenRefresh               time.Duration
+	TokenServerAddr            string
+	AuthorizationPolicyDomains string
+	AuthorizationServerAddr    string
+	MetricsServerAddr          string
+	PolicyRefreshInterval      string
+	PublicKeyRefreshInterval   string
+	AuthorizationCacheInterval string
 }
 
 // RoleCertificate stores role certificate
@@ -102,6 +107,12 @@ type RoleCertificate struct {
 	SerialNumber    *big.Int
 	DNSNames        []string
 	X509Certificate string
+}
+
+// InstanceIdentity stores instance identity certificate
+type InstanceIdentity struct {
+	X509CertificatePEM   string
+	X509CACertificatePEM string
 }
 
 // RoleToken stores role token
@@ -118,12 +129,6 @@ type AccessToken struct {
 	Role        string
 	TokenString string
 	Expiry      int64
-}
-
-// InstanceIdentity stores instance identity certificate
-type InstanceIdentity struct {
-	X509CertificatePEM   string
-	X509CACertificatePEM string
 }
 
 type identityHandler struct {
@@ -173,9 +178,9 @@ func InitIdentityHandler(config *IdentityConfig) (*identityHandler, error) {
 		return nil, err
 	}
 
-	var secretclient *k8s.SecretsClient
+	var secretClient *k8s.SecretsClient
 	if config.CertSecret != "" {
-		secretclient, err = k8s.NewSecretClient(config.CertSecret, config.Namespace)
+		secretClient, err = k8s.NewSecretClient(config.CertSecret, config.Namespace)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to initialize kubernetes secret client, err: %v", err)
 		}
@@ -188,7 +193,7 @@ func InitIdentityHandler(config *IdentityConfig) (*identityHandler, error) {
 		service:      service,
 		instanceid:   config.PodUID,
 		csrOptions:   csrOptions,
-		secretClient: secretclient,
+		secretClient: secretClient,
 	}, nil
 }
 
@@ -314,7 +319,7 @@ func (h *identityHandler) GetX509RoleCert(id *InstanceIdentity, keyPEM []byte) (
 	}
 
 	// In init mode, the existing ZTS Client does not have client certificate set.
-	// When config.Reloader.GetLatestCertificate() is called to load client certificate, the first certificate has not written to the file yet.
+	// When config.Reloader.GetLatestCertificate() is called to load client certificate, the first certificate has not been written to the file yet.
 	// Therefore, ZTS Client must be renewed to make sure the ZTS Client loads the latest client certificate.
 	//
 	// The intermediate certificates may be different between each ZTS.
@@ -403,7 +408,7 @@ func (h *identityHandler) GetToken(certPEM, keyPEM []byte) (roletokens [](*RoleT
 	}
 
 	// In init mode, the existing ZTS Client does not have client certificate set.
-	// When config.Reloader.GetLatestCertificate() is called to load client certificate, the first certificate has not written to the file yet.
+	// When config.Reloader.GetLatestCertificate() is called to load client certificate, the first certificate has not been written to the file yet.
 	// Therefore, ZTS Client must be renewed to make sure the ZTS Client loads the latest client certificate.
 	//
 	// The intermediate certificates may be different between each ZTS.
@@ -460,6 +465,11 @@ func (h *identityHandler) DeleteX509CertRecord() error {
 	}
 
 	return nil
+}
+
+// Client returns the ZTS Client
+func (h *identityHandler) Client() *zts.ZTSClient {
+	return &h.client
 }
 
 // Domain returns the mapped Athenz domain
