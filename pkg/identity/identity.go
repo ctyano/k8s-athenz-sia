@@ -270,8 +270,17 @@ func (h *identityHandler) GetX509Cert(forceInit bool) (*InstanceIdentity, []byte
 		}
 	}
 
+	var intermediateCerts string
+	if h.config.IntermediateCertBundle != "" {
+		intermediateCertBundle, err := h.client.GetCertificateAuthorityBundle(zts.SimpleName(h.config.IntermediateCertBundle))
+		if err != nil || intermediateCertBundle == nil || intermediateCertBundle.Certs == "" {
+			return nil, nil, fmt.Errorf("Failed to call GetCertificateAuthorityBundle, err: %v", err)
+		}
+		intermediateCerts = intermediateCertBundle.Certs
+	}
+
 	identity := &InstanceIdentity{
-		X509CertificatePEM:   id.X509Certificate + id.X509CertificateSigner,
+		X509CertificatePEM:   id.X509Certificate + intermediateCerts,
 		X509CACertificatePEM: id.X509CertificateSigner,
 	}
 
