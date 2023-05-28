@@ -78,7 +78,7 @@ jobs:
             DOCKER_REGISTRY_TOKEN_NAME='DOCKER_REGISTRY_TOKEN'
           else
             DOCKER_REGISTRY_URL="${DOCKER_REGISTRY_URL:=ghcr.io}"
-            DOCKER_REGISTRY_TOKEN_NAME='GITHUB_TOKEN'
+            DOCKER_REGISTRY_TOKEN_NAME="${{ env.GITHUB_TOKEN }}"
           fi
 
           # Set default values and create image reference
