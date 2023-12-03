@@ -153,14 +153,14 @@ jobs:
         name: Set Golang env
         id: go-env
         run: |
-          go env | grep GOPATH | sed -e 's/"//g' >> $GITHUB_ENV
+          go env | grep GOPATH | sed -e "s/'//g" >> $GITHUB_ENV
 
       # This action allows caching dependencies and build outputs to improve workflow execution time.
       # https://github.com/actions/cache
       -
         name: Cache Go Modules
         id: cache-go
-        # users: https://github.com/actions/cache/tags
+        # uses: https://github.com/actions/cache/tags
         uses: actions/cache@v3
         with:
           path: |

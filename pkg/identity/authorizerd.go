@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -75,6 +76,9 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 			at := r.Header.Get(accessTokenHeader)
 			rt := r.Header.Get(idConfig.RoleAuthHeader)
 
+			// returns HTTP status codes denpending on the results
+			// https://pkg.go.dev/net/http
+
 			if (at == "" && rt == "") || action == "" || resource == "" {
 				log.Infof("Required http headers are not set: %s len(%d), %s len(%d), action[%s], resource[%s]", accessTokenHeader, len(at), idConfig.RoleAuthHeader, len(rt), action, resource)
 				w.WriteHeader(http.StatusBadRequest)
@@ -87,9 +91,29 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 				return
 			}
 
-			w.WriteHeader(http.StatusAccepted)
-			io.WriteString(w, fmt.Sprintf("%v", principal))
+			result := map[string]string{}
+			result["name"] = principal.Name()
+			result["domain"] = principal.Domain()
+			result["roles"] = strings.Join(principal.Roles(), ",")
+			result["issuetime"] = fmt.Sprintf("%d", principal.IssueTime())
+			result["expirytime"] = fmt.Sprintf("%d", principal.ExpiryTime())
+			result["authorizedroles"] = strings.Join(principal.AuthorizedRoles(), ",")
+			jsonresult, err := json.Marshal(result)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Infof("Authorization succeeded with action[%s], resource[%s] but failed to parse result: %s", action, resource, err.Error())
+				return
+			}
+			w.Header().Set("X-Athenz-Principal", principal.Name())
+			w.Header().Set("X-Athenz-Domain", principal.Domain())
+			w.Header().Set("X-Athenz-Roles", strings.Join(principal.Roles(), ","))
+			w.Header().Set("X-Athenz-IssueTime", fmt.Sprintf("%d", principal.IssueTime()))
+			w.Header().Set("X-Athenz-ExpiryTime", fmt.Sprintf("%d", principal.ExpiryTime()))
+			w.Header().Set("X-Athenz-AuthorizedRoles", strings.Join(principal.AuthorizedRoles(), ","))
+			w.WriteHeader(http.StatusOK)
+			io.WriteString(w, string(jsonresult))
 		}
+
 		httpServer := &http.Server{
 			Addr:    idConfig.AuthorizationServerAddr,
 			Handler: http.HandlerFunc(authorizerHandler),

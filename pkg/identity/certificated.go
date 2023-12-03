@@ -186,6 +186,7 @@ func Certificated(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 
 				if roleIdentity == nil || len(roleKeyPem) == 0 {
 					log.Errorf("Failed to load x509 certificate from local file to get x509 role certs: key size[%d]bytes, certificate size[%d]bytes", len(roleKeyPem), len(roleCertPem))
+					return err
 				} else {
 					log.Debugf("Successfully loaded x509 certificate from local file to get x509 role certs: key size[%d]bytes, certificate size[%d]bytes", len(roleKeyPem), len(roleCertPem))
 				}

@@ -124,7 +124,7 @@ jobs:
         name: Set Golang env
         id: go-env
         run: |
-          go env | grep GOPATH | sed -e 's/"//g' >> $GITHUB_ENV
+          go env | grep GOPATH | sed -e "s/'//g" >> $GITHUB_ENV
 
       # A GitHub Action to Create Packages
       -
