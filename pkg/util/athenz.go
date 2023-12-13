@@ -3,7 +3,6 @@ package util
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -23,25 +22,22 @@ func ServiceAccountToService(svc string) string {
 	return svc
 }
 
-// ServiceSpiffeURI returns the SPIFFE URI for the specified Athens domain and service.
+// ServiceSpiffeURI returns the SPIFFE URI for the specified Athenz domain and service.
 func ServiceSpiffeURI(domain, service string) (*url.URL, error) {
 	return url.Parse(fmt.Sprintf("spiffe://%s/sa/%s", domain, service))
 }
 
-// RoleSpiffeURI returns the SPIFFE URI for the specified Athens domain and service.
+// RoleSpiffeURI returns the SPIFFE URI for the specified Athenz domain and service.
 func RoleSpiffeURI(domain, role string) (*url.URL, error) {
 	return url.Parse(fmt.Sprintf("spiffe://%s/ra/%s", domain, role))
+}
+
+// RoleAthenzURI returns the Athenz URI for the specified Athenz domain and service.
+func RoleAthenzURI(domain, service string) (*url.URL, error) {
+	return url.Parse(fmt.Sprintf("athenz://principal/%s.%s", domain, service))
 }
 
 // DomainToDNSPart converts the Athenz domain into a DNS label
 func DomainToDNSPart(domain string) (part string) {
 	return strings.Replace(domain, ".", "-", -1)
-}
-
-func envOrDefault(name string, defaultValue string) string {
-	v := os.Getenv(name)
-	if v == "" {
-		return defaultValue
-	}
-	return v
 }

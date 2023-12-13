@@ -571,6 +571,10 @@ func PrepareRoleCsrOptions(config *IdentityConfig, domain, service string) (*[]u
 		if err != nil {
 			return nil, err
 		}
+		athenzURI, err := extutil.RoleAthenzURI(domain, service)
+		if err != nil {
+			return nil, err
+		}
 
 		sans := []string{
 			fmt.Sprintf("%s.%s.%s", service, domainDNSPart, config.DNSSuffix),
@@ -591,10 +595,12 @@ func PrepareRoleCsrOptions(config *IdentityConfig, domain, service string) (*[]u
 				IPAddresses: []net.IP{ip},
 				URIs: []url.URL{
 					*spiffeURI,
+					*athenzURI,
 				},
-				EmailAddresses: []string{
-					fmt.Sprintf("%s.%s@%s", domain, service, config.DNSSuffix),
-				},
+				// https://github.com/AthenZ/athenz/blob/69e0e0092ac1b37da8e37a21a4344a8db2514c50/servers/zts/src/main/java/com/yahoo/athenz/zts/cert/X509RoleCertRequest.java#L133-L139
+				//EmailAddresses: []string{
+				//	fmt.Sprintf("%s.%s@%s", domain, service, config.DNSSuffix),
+				//},
 			},
 		}
 
