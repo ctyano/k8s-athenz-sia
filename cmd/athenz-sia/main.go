@@ -58,44 +58,45 @@ func envOrDefault(name string, defaultValue string) string {
 // parseFlags parses ENV and cmd line args and returns an IdentityConfig object
 func parseFlags(program string, args []string) (*identity.IdentityConfig, error) {
 	var (
-		mode                       = envOrDefault("MODE", "init")
-		endpoint                   = envOrDefault("ENDPOINT", identity.DEFAULT_ENDPOINT)
-		providerService            = envOrDefault("PROVIDER_SERVICE", "")
-		dnsSuffix                  = envOrDefault("DNS_SUFFIX", identity.DEFAULT_DNS_SUFFIX)
-		refreshInterval            = envOrDefault("REFRESH_INTERVAL", "24h")
-		delayJitterSeconds, _      = strconv.ParseInt(envOrDefault("DELAY_JITTER_SECONDS", "0"), 10, 64)
-		keyFile                    = envOrDefault("KEY_FILE", "")
-		certFile                   = envOrDefault("CERT_FILE", "")
-		caCertFile                 = envOrDefault("CA_CERT_FILE", "")
-		intermediateCertBundle     = envOrDefault("INTERMEDIATE_CERT_BUNDLE", identity.DEFAULT_INTERMEDIATE_CERT_BUNDLE)
-		logDir                     = envOrDefault("LOG_DIR", "")
-		logLevel                   = envOrDefault("LOG_LEVEL", "INFO")
-		backup                     = envOrDefault("BACKUP", "read+write")
-		certSecret                 = envOrDefault("CERT_SECRET", "")
-		namespace                  = envOrDefault("NAMESPACE", "")
-		athenzDomain               = envOrDefault("ATHENZ_DOMAIN", "")
-		athenzPrefix               = envOrDefault("ATHENZ_PREFIX", "")
-		athenzSuffix               = envOrDefault("ATHENZ_SUFFIX", "")
-		serviceAccount             = envOrDefault("SERVICEACCOUNT", "")
-		saTokenFile                = envOrDefault("SA_TOKEN_FILE", "")
-		podIP                      = envOrDefault("POD_IP", "127.0.0.1")
-		podUID                     = envOrDefault("POD_UID", "")
-		deleteInstanceID, _        = strconv.ParseBool(envOrDefault("DELETE_INSTANCE_ID", "true"))
-		serverCACert               = envOrDefault("SERVER_CA_CERT", "")
-		targetDomainRoles          = envOrDefault("TARGET_DOMAIN_ROLES", "")
-		roleCertDir                = envOrDefault("ROLECERT_DIR", "")
-		roleCertFilenameDelimiter  = envOrDefault("ROLE_CERT_FILENAME_DELIMITER", identity.DEFAULT_ROLE_CERT_FILENAME_DELIMITER)
-		tokenDir                   = envOrDefault("TOKEN_DIR", "")
-		roleAuthHeader             = envOrDefault("ROLE_AUTH_HEADER", identity.DEFAULT_ROLE_AUTH_HEADER)
-		tokenType                  = envOrDefault("TOKEN_TYPE", "accesstoken")
-		tokenRefreshInterval       = envOrDefault("TOKEN_REFRESH_INTERVAL", "30m")
-		tokenServerAddr            = envOrDefault("TOKEN_SERVER_ADDR", "")
-		authorizationPolicyDomains = envOrDefault("AUTHORIZATION_POLICY_DOMAINS", "")
-		authorizationServerAddr    = envOrDefault("AUTHORIZATION_SERVER_ADDR", "")
-		metricsServerAddr          = envOrDefault("METRICS_SERVER_ADDR", "")
-		policyRefreshInterval      = envOrDefault("POLICY_REFRESH_INTERVAL", "1h")
-		publicKeyRefreshInterval   = envOrDefault("PUBLICKEY_REFRESH_INTERVAL", "12h")
-		authorizationCacheInterval = envOrDefault("AUTHORIZATION_CACHE_INTERVAL", "1m")
+		mode                                     = envOrDefault("MODE", "init")
+		endpoint                                 = envOrDefault("ENDPOINT", identity.DEFAULT_ENDPOINT)
+		providerService                          = envOrDefault("PROVIDER_SERVICE", "")
+		dnsSuffix                                = envOrDefault("DNS_SUFFIX", identity.DEFAULT_DNS_SUFFIX)
+		refreshInterval                          = envOrDefault("REFRESH_INTERVAL", "24h")
+		delayJitterSeconds, _                    = strconv.ParseInt(envOrDefault("DELAY_JITTER_SECONDS", "0"), 10, 64)
+		keyFile                                  = envOrDefault("KEY_FILE", "")
+		certFile                                 = envOrDefault("CERT_FILE", "")
+		caCertFile                               = envOrDefault("CA_CERT_FILE", "")
+		intermediateCertBundle                   = envOrDefault("INTERMEDIATE_CERT_BUNDLE", identity.DEFAULT_INTERMEDIATE_CERT_BUNDLE)
+		logDir                                   = envOrDefault("LOG_DIR", "")
+		logLevel                                 = envOrDefault("LOG_LEVEL", "INFO")
+		backup                                   = envOrDefault("BACKUP", "read+write")
+		certSecret                               = envOrDefault("CERT_SECRET", "")
+		namespace                                = envOrDefault("NAMESPACE", "")
+		athenzDomain                             = envOrDefault("ATHENZ_DOMAIN", "")
+		athenzPrefix                             = envOrDefault("ATHENZ_PREFIX", "")
+		athenzSuffix                             = envOrDefault("ATHENZ_SUFFIX", "")
+		serviceAccount                           = envOrDefault("SERVICEACCOUNT", "")
+		saTokenFile                              = envOrDefault("SA_TOKEN_FILE", "")
+		podIP                                    = envOrDefault("POD_IP", "127.0.0.1")
+		podUID                                   = envOrDefault("POD_UID", "")
+		deleteInstanceID, _                      = strconv.ParseBool(envOrDefault("DELETE_INSTANCE_ID", "true"))
+		serverCACert                             = envOrDefault("SERVER_CA_CERT", "")
+		targetDomainRoles                        = envOrDefault("TARGET_DOMAIN_ROLES", "")
+		roleCertDir                              = envOrDefault("ROLECERT_DIR", "")
+		roleCertFilenameDelimiter                = envOrDefault("ROLE_CERT_FILENAME_DELIMITER", identity.DEFAULT_ROLE_CERT_FILENAME_DELIMITER)
+		tokenDir                                 = envOrDefault("TOKEN_DIR", "")
+		roleAuthHeader                           = envOrDefault("ROLE_AUTH_HEADER", identity.DEFAULT_ROLE_AUTH_HEADER)
+		tokenType                                = envOrDefault("TOKEN_TYPE", "accesstoken")
+		tokenRefreshInterval                     = envOrDefault("TOKEN_REFRESH_INTERVAL", "30m")
+		tokenServerAddr                          = envOrDefault("TOKEN_SERVER_ADDR", "")
+		authorizationPolicyDomains               = envOrDefault("AUTHORIZATION_POLICY_DOMAINS", "")
+		authorizationServerAddr                  = envOrDefault("AUTHORIZATION_SERVER_ADDR", "")
+		metricsServerAddr                        = envOrDefault("METRICS_SERVER_ADDR", "")
+		policyRefreshInterval                    = envOrDefault("POLICY_REFRESH_INTERVAL", "1h")
+		publicKeyRefreshInterval                 = envOrDefault("PUBLICKEY_REFRESH_INTERVAL", "12h")
+		authorizationCacheInterval               = envOrDefault("AUTHORIZATION_CACHE_INTERVAL", "1m")
+		enableMTLSCertificateBoundAccessToken, _ = strconv.ParseBool(envOrDefault("MTLS_CERTIFICATE_BOUND_ACCESS_TOKEN", "false"))
 	)
 	f := flag.NewFlagSet(program, flag.ContinueOnError)
 	f.StringVar(&mode, "mode", mode, "mode, must be one of init or refresh")
@@ -125,6 +126,7 @@ func parseFlags(program string, args []string) (*identity.IdentityConfig, error)
 	f.StringVar(&metricsServerAddr, "metrics-server-addr", metricsServerAddr, "HTTP server address to provide metrics")
 	f.StringVar(&policyRefreshInterval, "policy-refresh-interval", policyRefreshInterval, "policy refresh interval")
 	f.StringVar(&publicKeyRefreshInterval, "publickey-refresh-interval", publicKeyRefreshInterval, "public key refresh interval")
+	f.BoolVar(&enableMTLSCertificateBoundAccessToken, "mtls-bound-access-token", enableMTLSCertificateBoundAccessToken, "restrict access token to be bound with peer certificate")
 
 	err := f.Parse(args)
 	if err != nil {
@@ -195,43 +197,44 @@ func parseFlags(program string, args []string) (*identity.IdentityConfig, error)
 	}
 
 	return &identity.IdentityConfig{
-		Init:                       init,
-		Endpoint:                   endpoint,
-		ProviderService:            providerService,
-		DNSSuffix:                  dnsSuffix,
-		Refresh:                    ri,
-		DelayJitterSeconds:         delayJitterSeconds,
-		KeyFile:                    keyFile,
-		CertFile:                   certFile,
-		CaCertFile:                 caCertFile,
-		IntermediateCertBundle:     intermediateCertBundle,
-		Backup:                     backup,
-		CertSecret:                 certSecret,
-		Namespace:                  namespace,
-		AthenzDomain:               athenzDomain,
-		AthenzPrefix:               athenzPrefix,
-		AthenzSuffix:               athenzSuffix,
-		ServiceAccount:             serviceAccount,
-		SaTokenFile:                saTokenFile,
-		PodIP:                      podIP,
-		PodUID:                     podUID,
-		DeleteInstanceID:           deleteInstanceID,
-		Reloader:                   reloader,
-		ServerCACert:               serverCACert,
-		TargetDomainRoles:          targetDomainRoles,
-		RoleCertDir:                roleCertDir,
-		RoleCertFilenameDelimiter:  roleCertFilenameDelimiter,
-		RoleAuthHeader:             roleAuthHeader,
-		TokenDir:                   tokenDir,
-		TokenType:                  tokenType,
-		TokenRefresh:               tri,
-		TokenServerAddr:            tokenServerAddr,
-		AuthorizationPolicyDomains: authorizationPolicyDomains,
-		AuthorizationServerAddr:    authorizationServerAddr,
-		MetricsServerAddr:          metricsServerAddr,
-		PolicyRefreshInterval:      policyRefreshInterval,
-		PublicKeyRefreshInterval:   publicKeyRefreshInterval,
-		AuthorizationCacheInterval: authorizationCacheInterval,
+		Init:                                  init,
+		Endpoint:                              endpoint,
+		ProviderService:                       providerService,
+		DNSSuffix:                             dnsSuffix,
+		Refresh:                               ri,
+		DelayJitterSeconds:                    delayJitterSeconds,
+		KeyFile:                               keyFile,
+		CertFile:                              certFile,
+		CaCertFile:                            caCertFile,
+		IntermediateCertBundle:                intermediateCertBundle,
+		Backup:                                backup,
+		CertSecret:                            certSecret,
+		Namespace:                             namespace,
+		AthenzDomain:                          athenzDomain,
+		AthenzPrefix:                          athenzPrefix,
+		AthenzSuffix:                          athenzSuffix,
+		ServiceAccount:                        serviceAccount,
+		SaTokenFile:                           saTokenFile,
+		PodIP:                                 podIP,
+		PodUID:                                podUID,
+		DeleteInstanceID:                      deleteInstanceID,
+		Reloader:                              reloader,
+		ServerCACert:                          serverCACert,
+		TargetDomainRoles:                     targetDomainRoles,
+		RoleCertDir:                           roleCertDir,
+		RoleCertFilenameDelimiter:             roleCertFilenameDelimiter,
+		RoleAuthHeader:                        roleAuthHeader,
+		TokenDir:                              tokenDir,
+		TokenType:                             tokenType,
+		TokenRefresh:                          tri,
+		TokenServerAddr:                       tokenServerAddr,
+		AuthorizationPolicyDomains:            authorizationPolicyDomains,
+		AuthorizationServerAddr:               authorizationServerAddr,
+		MetricsServerAddr:                     metricsServerAddr,
+		PolicyRefreshInterval:                 policyRefreshInterval,
+		PublicKeyRefreshInterval:              publicKeyRefreshInterval,
+		AuthorizationCacheInterval:            authorizationCacheInterval,
+		EnableMTLSCertificateBoundAccessToken: enableMTLSCertificateBoundAccessToken,
 	}, nil
 }
 

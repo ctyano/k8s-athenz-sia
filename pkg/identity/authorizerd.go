@@ -2,7 +2,9 @@ package identity
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +13,7 @@ import (
 	"time"
 
 	authorizerd "github.com/AthenZ/athenz-authorizer/v5"
+	"github.com/pkg/errors"
 	"github.com/yahoo/k8s-athenz-identity/pkg/log"
 )
 
@@ -53,7 +56,7 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 			//authorizerd.WithEnablePubkeyd(),
 			authorizerd.WithEnablePolicyd(),
 			authorizerd.WithEnableJwkd(),
-			authorizerd.WithAccessTokenParam(authorizerd.NewAccessTokenParam(true, false, "", "", false, nil)),
+			authorizerd.WithAccessTokenParam(authorizerd.NewAccessTokenParam(true, idConfig.EnableMTLSCertificateBoundAccessToken, "", "", false, nil)),
 			authorizerd.WithEnableRoleToken(),
 			authorizerd.WithRoleAuthHeader(idConfig.RoleAuthHeader),
 			//authorizerd.WithEnableRoleCert(),
@@ -66,6 +69,43 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 		if err = daemon.Init(authzctx); err != nil {
 			log.Errorf("Failed to start authorizer: %s", err.Error())
 		}
+		authorize := func(cert *x509.Certificate, at, rt, action, resource string) (principal authorizerd.Principal, err error) {
+
+			if cert != nil && at == "" {
+				principal, err = daemon.AuthorizeRoleCert(authzctx, []*x509.Certificate{cert}, action, resource)
+				if err != nil {
+					err = errors.Wrap(err, fmt.Sprintf("Authorization failed with role certificate, action[%s], resource[%s]: %s", action, resource, err.Error()))
+					log.Debugf("Authorization failed: %s", err.Error())
+				}
+				if principal != nil {
+					return principal, nil
+				}
+			}
+			if at != "" {
+				principal, err = daemon.AuthorizeAccessToken(authzctx, at, action, resource, cert)
+				if err != nil {
+					err = errors.Wrap(err, fmt.Sprintf("Authorization failed with access token, action[%s], resource[%s]: %s", action, resource, err.Error()))
+					log.Debugf("Authorization failed: %s", err.Error())
+				}
+				if principal != nil {
+					return principal, nil
+				}
+			}
+			if rt != "" {
+				principal, err = daemon.AuthorizeRoleToken(authzctx, rt, action, resource)
+				if err != nil {
+					err = errors.Wrap(err, fmt.Sprintf("Authorization failed with role token, action[%s], resource[%s]: %s", action, resource, err.Error()))
+					log.Debugf("Authorization failed: %s", err.Error())
+				}
+				if principal != nil {
+					return principal, nil
+				}
+			}
+
+			log.Infof("Authorization failed: %s", err.Error())
+
+			return nil, err
+		}
 
 		authorizerHandler := func(w http.ResponseWriter, r *http.Request) {
 			actionHeader := "X-Athenz-Action"
@@ -73,21 +113,44 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 			action := r.Header.Get(actionHeader)
 			resource := r.Header.Get(resourceHeader)
 			accessTokenHeader := "Authorization"
-			at := r.Header.Get(accessTokenHeader)
+			accessTokenHeaderValue := strings.Split(r.Header.Get(accessTokenHeader), " ")
+			at := accessTokenHeaderValue[len(accessTokenHeaderValue)-1]
 			rt := r.Header.Get(idConfig.RoleAuthHeader)
+			certificateHeader := "X-Athenz-Certificate"
+			certificatePEM, _ := url.QueryUnescape(r.Header.Get(certificateHeader))
+			var cert *x509.Certificate
+			var principal authorizerd.Principal
 
 			// returns HTTP status codes denpending on the results
 			// https://pkg.go.dev/net/http
 
-			if (at == "" && rt == "") || action == "" || resource == "" {
-				log.Infof("Required http headers are not set: %s len(%d), %s len(%d), action[%s], resource[%s]", accessTokenHeader, len(at), idConfig.RoleAuthHeader, len(rt), action, resource)
+			if (at == "" && rt == "" && certificatePEM == "") || action == "" || resource == "" {
+				log.Infof("Required http headers are not set: %s len(%d), %s len(%d), %s len(%d), action[%s], resource[%s]",
+					accessTokenHeader, len(at), idConfig.RoleAuthHeader, len(rt), certificateHeader, len(certificatePEM), action, resource)
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
-			principal, err := daemon.Authorize(r, action, resource)
-			if err != nil {
+
+			// OR logic on multiple credentials
+			// https://github.com/AthenZ/athenz-authorizer/blob/2c7a05296acbf9dcb1bd751415e430593339b6d1/authorizerd.go#L489
+			if certificatePEM != "" {
+				block, _ := pem.Decode([]byte(certificatePEM))
+				if block == nil {
+					log.Infof("Malformed PEM certificate was set: %s[%s]", certificateHeader, certificatePEM)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				cert, err = x509.ParseCertificate(block.Bytes)
+				if err != nil {
+					log.Infof("Malformed X.509 certificate was set: %s[%s]", certificateHeader, certificatePEM)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+			}
+
+			principal, err := authorize(cert, at, rt, action, resource)
+			if err != nil || principal == nil {
 				w.WriteHeader(http.StatusUnauthorized)
-				log.Infof("Authorization failed with action[%s], resource[%s]: %s", action, resource, err.Error())
 				return
 			}
 
@@ -101,15 +164,20 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 			jsonresult, err := json.Marshal(result)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
-				log.Infof("Authorization succeeded with action[%s], resource[%s] but failed to parse result: %s", action, resource, err.Error())
+				log.Infof("Authorization succeeded with %s len(%d), %s len(%d), %s len(%d), action[%s], resource[%s] but failed to prepare response: %s",
+					accessTokenHeader, len(at), idConfig.RoleAuthHeader, len(rt), certificateHeader, len(certificatePEM), action, resource, err.Error())
 				return
 			}
 			w.Header().Set("X-Athenz-Principal", principal.Name())
 			w.Header().Set("X-Athenz-Domain", principal.Domain())
-			w.Header().Set("X-Athenz-Roles", strings.Join(principal.Roles(), ","))
-			w.Header().Set("X-Athenz-IssueTime", fmt.Sprintf("%d", principal.IssueTime()))
-			w.Header().Set("X-Athenz-ExpiryTime", fmt.Sprintf("%d", principal.ExpiryTime()))
+			w.Header().Set("X-Athenz-Role", strings.Join(principal.Roles(), ","))
+			w.Header().Set("X-Athenz-Issued-At", fmt.Sprintf("%d", principal.IssueTime()))
+			w.Header().Set("X-Athenz-Expires-At", fmt.Sprintf("%d", principal.ExpiryTime()))
 			w.Header().Set("X-Athenz-AuthorizedRoles", strings.Join(principal.AuthorizedRoles(), ","))
+			if c, ok := principal.(authorizerd.OAuthAccessToken); ok {
+				w.Header().Set("X-Athenz-Client-ID", c.ClientID())
+			}
+
 			w.WriteHeader(http.StatusOK)
 			io.WriteString(w, string(jsonresult))
 		}
