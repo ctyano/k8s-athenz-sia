@@ -153,21 +153,6 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
-
-			result := map[string]string{}
-			result["name"] = principal.Name()
-			result["domain"] = principal.Domain()
-			result["roles"] = strings.Join(principal.Roles(), ",")
-			result["issuetime"] = fmt.Sprintf("%d", principal.IssueTime())
-			result["expirytime"] = fmt.Sprintf("%d", principal.ExpiryTime())
-			result["authorizedroles"] = strings.Join(principal.AuthorizedRoles(), ",")
-			jsonresult, err := json.Marshal(result)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				log.Infof("Authorization succeeded with %s len(%d), %s len(%d), %s len(%d), action[%s], resource[%s] but failed to prepare response: %s",
-					accessTokenHeader, len(at), idConfig.RoleAuthHeader, len(rt), certificateHeader, len(certificatePEM), action, resource, err.Error())
-				return
-			}
 			w.Header().Set("X-Athenz-Principal", principal.Name())
 			w.Header().Set("X-Athenz-Domain", principal.Domain())
 			w.Header().Set("X-Athenz-Role", strings.Join(principal.Roles(), ","))
@@ -178,8 +163,23 @@ func Authorizerd(idConfig *IdentityConfig, stopChan <-chan struct{}) error {
 				w.Header().Set("X-Athenz-Client-ID", c.ClientID())
 			}
 
+			result := map[string]string{}
+			result["principal"] = principal.Name()
+			result["domain"] = principal.Domain()
+			result["role"] = strings.Join(principal.Roles(), ",")
+			result["issued-at"] = fmt.Sprintf("%d", principal.IssueTime())
+			result["expires-at"] = fmt.Sprintf("%d", principal.ExpiryTime())
+			result["authorizedroles"] = strings.Join(principal.AuthorizedRoles(), ",")
+			response, err := json.Marshal(result)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Infof("Authorization succeeded with %s len(%d), %s len(%d), %s len(%d), action[%s], resource[%s] but failed to prepare response: %s",
+					accessTokenHeader, len(at), idConfig.RoleAuthHeader, len(rt), certificateHeader, len(certificatePEM), action, resource, err.Error())
+				return
+			}
+
 			w.WriteHeader(http.StatusOK)
-			io.WriteString(w, string(jsonresult))
+			io.WriteString(w, string(response))
 		}
 
 		httpServer := &http.Server{
