@@ -136,7 +136,9 @@ func (idCfg *IdentityConfig) loadFromENV() error {
 			return fmt.Errorf("Invalid POD_IP [%q], %w", idCfg.rawPodIP, err)
 		}
 	}
-	idCfg.AdditionalSANDNSs = strings.Split(idCfg.rawAdditionalSANDNSs, ",")
+	if len(idCfg.rawExtraSANDNSs) > 0 {
+		idCfg.ExtraSANDNSs = strings.Split(idCfg.rawExtraSANDNSs, ",")
+	}
 	idCfg.Refresh, err = time.ParseDuration(idCfg.rawRefresh)
 	if err != nil {
 		return fmt.Errorf("Invalid REFRESH_INTERVAL [%q], %w", idCfg.rawRefresh, err)
