@@ -142,6 +142,18 @@ func (h *identityHandler) GetX509CertFromSecret() (*InstanceIdentity, []byte, er
 	return nil, nil, nil
 }
 
+// CreateX509CertToSecret saves X.509 certificate to Kubernetes Secret
+func (h *identityHandler) CreateX509CertToSecret(identity *InstanceIdentity, keyPEM []byte) error {
+	if h.secretClient != nil {
+		_, err := h.secretClient.CreateIdentitySecret(keyPEM, []byte(identity.X509CertificatePEM))
+		if err != nil {
+			return fmt.Errorf("Failed to create backup identity in kubernetes secret, err: %v", err)
+		}
+	}
+
+	return nil
+}
+
 // ApplyX509CertToSecret saves X.509 certificate to Kubernetes Secret
 func (h *identityHandler) ApplyX509CertToSecret(identity *InstanceIdentity, keyPEM []byte) error {
 	if h.secretClient != nil {

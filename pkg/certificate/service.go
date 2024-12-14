@@ -151,6 +151,11 @@ func New(ctx context.Context, idCfg *config.IdentityConfig) (daemon.Daemon, erro
 		if err != nil {
 			log.Warnf("Error while requesting x509 certificate to identity provider: %s", err.Error())
 
+			if idCfg.K8sSecretBackup.UseCreate {
+				log.Errorf("Failed to receive x509 certificate to create kubernetes secret[%s]: %s", idCfg.K8sSecretBackup.Secret, err.Error())
+				return
+			}
+
 			if idCfg.K8sSecretBackup.UseWrite {
 				log.Errorf("Failed to receive x509 certificate to update kubernetes secret[%s]: %s", idCfg.K8sSecretBackup.Secret, err.Error())
 				return
@@ -158,6 +163,26 @@ func New(ctx context.Context, idCfg *config.IdentityConfig) (daemon.Daemon, erro
 
 		} else {
 			log.Info("Successfully received x509 certificate from identity provider")
+
+			if idCfg.K8sSecretBackup.UseCreate {
+
+				log.Infof("Attempting to save x509 certificate to a new kubernetes secret[%s]...", idCfg.K8sSecretBackup.Secret)
+
+				existingK8sSecretBackupIdentity, existingK8sSecretBackupKeyPEM, _ := handler.GetX509CertFromSecret()
+				if existingK8sSecretBackupIdentity != nil || len(existingK8sSecretBackupKeyPEM) != 0 {
+					log.Debugf("Skipping to create existing Kubernetes secret[%s]", idCfg.K8sSecretBackup.Secret)
+				} else {
+					err = handler.CreateX509CertToSecret(identity, keyPEM)
+					if err != nil {
+						log.Errorf("Failed to save x509 certificate to a new kubernetes secret: %s", err.Error())
+						return
+					}
+
+					log.Infof("Successfully saved x509 certificate to a new kubernetes secret")
+				}
+			} else {
+				log.Debugf("Skipping to save x509 certificate temporary backup to a new Kubernetes secret[%s]", idCfg.K8sSecretBackup.Secret)
+			}
 
 			if idCfg.K8sSecretBackup.UseWrite {
 
