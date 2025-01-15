@@ -1,0 +1,82 @@
+name: Build and Publish Docker Image
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+on:
+  workflow_call:
+
+jobs:
+
+  go-test:
+
+    runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#permissions
+    permissions:
+      actions: none
+      checks: none
+      contents: read
+      deployments: none
+      issues: none
+      discussions: none
+      packages: none
+      pull-requests: none
+      repository-projects: none
+      security-events: none
+      statuses: none
+
+    steps:
+
+      # This action checks-out your repository under $GITHUB_WORKSPACE, so your workflow can access it.
+      # https://github.com/actions/checkout
+      -
+        name: Checkout repository
+        id: checkout
+        # You may pin to the exact commit or the version.
+        # uses: https://github.com/actions/checkout/tags
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # This action sets up a go environment for use in actions by:
+      # - Optionally downloading and caching a version of Go by version and adding to PATH.
+      # - Registering problem matchers for error output.
+      # https://github.com/actions/setup-go
+      -
+        name: Setup Golang
+        id: setup_go
+        # You may pin to the exact commit or the version.
+        # uses: https://github.com/actions/setup-go/tags
+        uses: actions/setup-go@v4
+        with:
+          # go-version: stable
+          go-version-file: './go.mod'
+          check-latest: true
+          cache: true
+
+      # A GitHub Action for golang tests
+      -
+        name: Golang Tests
+        id: go_tests
+        run: |
+          go version
+          make test
+
+      # https://github.com/apache/skywalking-eyes
+      # issue: go version hard-coded: https://github.com/apache/skywalking-eyes/blob/5dfa68f93380a5e57259faaf95088b7f133b5778/header/action.yml#L47-L51
+      - name: Check License Header
+        uses: apache/skywalking-eyes/header@main
+        with:
+          log: "info" # optional: set the log level. The default value is `info`.
+          config: ".licenserc.yaml" # optional: set the config file. The default value is `.licenserc.yaml`.
+          token: "" # optional: the token that license eye uses when it needs to comment on the pull request. Set to empty ("") to disable commenting on pull request. The default value is ${{ github.token }}
+          mode: "check" # optional: Which mode License-Eye should be run in. Choices are `check` or `fix`. The default value is `check`.
+
+      # https://github.com/hadolint/hadolint-action
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: "./Dockerfile"
+          config: "./.hadolint.yaml"

@@ -12,22 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
-
-import "testing"
-
-func TestNamespaceToDomain(t *testing.T) {
-
-}
-
-func TestServiceAccountToService(t *testing.T) {
-
-}
-
-func TestSpiffeURI(t *testing.T) {
-
-}
-
-func TestDomainToDNSPart(t *testing.T) {
-
-}
+// Package config defines all the configuration parameters. It reads configuration from environment variables and command-line arguments.
+package config

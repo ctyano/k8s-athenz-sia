@@ -16,9 +16,30 @@
 # Third-party libraries
 vendor/*
 
-# go build binary
-k8s-athenz-sia
+# Go build binary
+/k8s-athenz-sia
+/athenz-sia
+
+# packages
+*.rpm
+*.deb
+*.apk
+
+# Output
+*.log
+./*.yaml
 
 # IDE
 .idea*
 .vscode*
+
+# Credentials to test runnnig the built binary
+*.pem
+*.crt
+*.key
+*.roletoken
+*.accesstoken
+*.tmp
+
+# Log files from the built binary
+*.log

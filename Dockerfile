@@ -1,27 +1,34 @@
-FROM golang:1.18-alpine as builder
+FROM docker.io/golang:1-alpine as base
+
+RUN apk add --no-cache make g++ git
 
 WORKDIR /go/src/k8s-athenz-sia
 
+COPY go.mod .
+COPY go.sum .
+
+RUN GO111MODULE=on go mod download
+
+FROM base AS builder
+
 COPY . .
 
-ARG ATHENZ_SIA_VERSION
-ARG ATHENZ_SIA_DEFAULT_COUNTRY
-ARG ATHENZ_SIA_DEFAULT_PROVINCE
-ARG ATHENZ_SIA_DEFAULT_ORGANIZATION
-ARG ATHENZ_SIA_DEFAULT_ORGANIZATIONAL_UNIT
-ARG ATHENZ_SIA_DEFAULT_ROLE_CERT_EXPIRY_TIME_BUFFER_MINUTES
+ARG ATHENZ_SIA_VERSION=''
+RUN ATHENZ_SIA_VERSION="${ATHENZ_SIA_VERSION}" make build
+ARG ATHENZ_SIA_DEFAULT_COUNTRY=US
 
-RUN apk add --no-cache make
+FROM docker.io/alpine:3
+LABEL maintainer "cncf-athenz-maintainers@lists.cncf.io"
 
-RUN make build
-
-FROM docker.io/alpine:3.15
-
-RUN apk --update add ca-certificates
+RUN apk --no-cache add ca-certificates
 
 COPY --from=builder /go/bin/athenz-sia /usr/bin/athenz-sia
 
 USER nobody
+
+ENV KEY_FILE /var/run/athenz/service.key.pem
+ENV CERT_FILE /var/run/athenz/service.cert.pem
+ENV CA_CERT_FILE /var/run/athenz/ca.cert.pem
 
 # --interval=DURATION (default: 30s)
 # --timeout=DURATION (default: 30s)

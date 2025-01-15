@@ -1,9 +1,22 @@
+// Copyright 2023 LY Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package util
 
 import (
 	"fmt"
 	"net/url"
-	"os"
 	"strings"
 )
 
@@ -11,11 +24,7 @@ const NS_DELIMITER = "-"
 const DOMAIN_DELIMITER = "."
 
 // NamespaceToDomain converts a kube namespace to an Athenz domain
-func NamespaceToDomain(ns string) (domain string) {
-	d := envOrDefault("ATHENZ_DOMAIN", "")
-	pre := envOrDefault("ATHENZ_PREFIX", "")
-	suf := envOrDefault("ATHENZ_SUFFIX", "")
-
+func NamespaceToDomain(ns, pre, d, suf string) (domain string) {
 	if d == "" {
 		return pre + ns + suf
 	}
@@ -40,12 +49,4 @@ func RoleSpiffeURI(domain, role string) (*url.URL, error) {
 // DomainToDNSPart converts the Athenz domain into a DNS label
 func DomainToDNSPart(domain string) (part string) {
 	return strings.Replace(domain, ".", "-", -1)
-}
-
-func envOrDefault(name string, defaultValue string) string {
-	v := os.Getenv(name)
-	if v == "" {
-		return defaultValue
-	}
-	return v
 }

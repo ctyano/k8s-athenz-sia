@@ -1,0 +1,73 @@
+name: Trigger Workflows from Git Push or Pull Request
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+on:
+  # If any commit message in your push or the HEAD commit of your PR contains the strings
+  # [skip ci], [ci skip], [no ci], [skip actions], or [actions skip]
+  # workflows triggered on the push or pull_request events will be skipped.
+  # https://github.blog/changelog/2021-02-08-github-actions-skip-pull-request-and-push-workflows-with-skip-ci/
+  push:
+    branches: [ main ]
+    # Publish semver tags as releases.
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches: [ main ]
+
+env:
+  # DOCKER_TARGET_PLATFORMS: "linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64"
+  DOCKER_TARGET_PLATFORMS: "linux/amd64,linux/arm64"
+
+jobs: # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+
+  go-test:
+    name: "Run unit test"
+    uses: ./.github/workflows/go-test.yaml
+
+  set-platforms:
+    runs-on: ubuntu-latest
+    outputs:
+      DOCKER_TARGET_PLATFORMS: ${{ steps.set_platforms.outputs.DOCKER_TARGET_PLATFORMS }}
+      DOCKER_TARGET_PLATFORMS_JSON: ${{ steps.set_platforms.outputs.DOCKER_TARGET_PLATFORMS_JSON }}
+    steps:
+      - name: Set platforms
+        id: set_platforms
+        run: |
+          echo "DOCKER_TARGET_PLATFORMS=${DOCKER_TARGET_PLATFORMS}" >> "$GITHUB_OUTPUT"
+
+          # convert to JSON string
+          IFS=',' read -ra platforms <<< "${DOCKER_TARGET_PLATFORMS}" # split
+          json_array="$(printf '\"%s\",' "${platforms[@]}")" # double quote with escape
+          json_array="[${json_array%?}]" # Remove the trailing comma, add square bracket
+          echo "DOCKER_TARGET_PLATFORMS_JSON=${json_array}" >> "$GITHUB_OUTPUT"
+
+  docker-build-publish:
+    name: "Build and Publish Docker Images"
+    needs:
+      - go-test
+      - set-platforms
+    uses: ./.github/workflows/docker-build-publish.yaml
+    secrets: inherit
+    with:
+      DOCKER_TARGET_PLATFORMS: ${{ needs.set-platforms.outputs.DOCKER_TARGET_PLATFORMS_JSON }}
+
+  github-releases:
+    name: "Create Github Releases with Packages"
+    needs:
+      - set-platforms
+      - docker-build-publish
+    if: "needs.docker-build-publish.outputs.DOCKER_REGISTRY_PUSH == 'true'"
+    uses: ./.github/workflows/github-releases.yaml
+    secrets: inherit
+    with:
+      DOCKER_TARGET_PLATFORMS: ${{ needs.set-platforms.outputs.DOCKER_TARGET_PLATFORMS }}
+      DOCKER_REGISTRY_URL: ${{ needs.docker-build-publish.outputs.DOCKER_REGISTRY_URL }}
+      DOCKER_REGISTRY_ORG: ${{ needs.docker-build-publish.outputs.DOCKER_REGISTRY_ORG }}
+      DOCKER_REGISTRY_USER: ${{ needs.docker-build-publish.outputs.DOCKER_REGISTRY_USER }}
+      DOCKER_REGISTRY_TOKEN_NAME: ${{ needs.docker-build-publish.outputs.DOCKER_REGISTRY_TOKEN_NAME }}
+      DOCKER_REGISTRY_REF: ${{ needs.docker-build-publish.outputs.DOCKER_REGISTRY_REF }}
+      version: ${{ needs.docker-build-publish.outputs.version }}

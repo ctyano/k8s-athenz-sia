@@ -12,22 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+// Package token defines tokens that serve as credentials in RBAC authorization.
+package token
 
-import "testing"
-
-func TestNamespaceToDomain(t *testing.T) {
-
-}
-
-func TestServiceAccountToService(t *testing.T) {
-
-}
-
-func TestSpiffeURI(t *testing.T) {
-
-}
-
-func TestDomainToDNSPart(t *testing.T) {
-
-}
+//go:generate oapi-codegen -package token -generate types -o ./sidecar.gen.go ../../api/sidecar.yaml

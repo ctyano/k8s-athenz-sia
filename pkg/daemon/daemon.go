@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package daemon
 
-import "testing"
+import (
+	"context"
 
-func TestNamespaceToDomain(t *testing.T) {
+	"github.com/AthenZ/k8s-athenz-sia/v3/pkg/config"
+)
 
-}
+// NewDaemonFunc defines the New() function. New() creates and initializes the daemon synchronously. New should stop processing gracefully when the context is cancelled.
+type NewDaemonFunc func(ctx context.Context, idCfg *config.IdentityConfig) (Daemon, error)
 
-func TestServiceAccountToService(t *testing.T) {
+type Daemon interface {
+	// Start starts the daemon and creates required background go routines synchronously
+	Start(ctx context.Context) error
 
-}
-
-func TestSpiffeURI(t *testing.T) {
-
-}
-
-func TestDomainToDNSPart(t *testing.T) {
-
+	// Shutdown shutdown the daemon gracefully and synchronously
+	Shutdown()
 }

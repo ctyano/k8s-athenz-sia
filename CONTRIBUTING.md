@@ -31,7 +31,8 @@ make test
 
 ## Dependency management
 
-The K8s athenz SIA project uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies on external packages. This requires a working Go environment with version 1.18 or greater installed.
+The K8s athenz SIA project uses [Go modules](https://golang.org/cmd/go/#hdr-Modules__module_versions__and_more) to manage dependencies on external packages. This requires a working Go environment with the same or later version specified in [go.mod](https://github.com/AthenZ/k8s-athenz-sia/blob/master/go.mod#L3).
+
 
 To add or update a new dependency, use the `go get` command:
 
@@ -56,4 +57,4 @@ You have to commit the changes to `go.mod` and `go.sum` before submitting the pu
 
 ### Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.0, available at <https://www.contributor-covenant.org/version/2/0/code_of_conduct.html>.
+- [Athenz Community Code of Conduct](./CODE_OF_CONDUCT.md)
