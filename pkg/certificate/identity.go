@@ -365,22 +365,9 @@ func PrepareIdentityCsrOptions(idCfg *config.IdentityConfig, domain, service str
 		return nil, nil
 	}
 
-	domainDNSPart := extutil.DomainToDNSPart(domain)
-
 	spiffeURI, err := extutil.ServiceSpiffeURI(domain, service)
 	if err != nil {
 		return nil, err
-	}
-
-	sans := []string{
-		fmt.Sprintf("%s.%s.%s", service, domainDNSPart, idCfg.DNSSuffix),
-		fmt.Sprintf("*.%s.%s.%s", service, domainDNSPart, idCfg.DNSSuffix),
-		fmt.Sprintf("%s.instanceid.athenz.%s", idCfg.PodUID, idCfg.DNSSuffix),
-	}
-
-	if len(idCfg.ServiceCert.CertExtraSANDNSs) > 0 {
-		sans = append(sans, idCfg.ServiceCert.CertExtraSANDNSs...)
-		log.Debugf("Requesting with Additional SAN DNSs%v, length[%d]", sans, len(sans))
 	}
 
 	subject := pkix.Name{
@@ -409,7 +396,7 @@ func PrepareIdentityCsrOptions(idCfg *config.IdentityConfig, domain, service str
 	csrOptions := &util.CSROptions{
 		Subject: subject,
 		SANs: util.SubjectAlternateNames{
-			DNSNames: sans,
+			DNSNames: idCfg.ServiceCert.CopperArgos.Sans,
 			URIs:     []url.URL{*spiffeURI},
 		},
 	}
