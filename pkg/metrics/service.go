@@ -68,10 +68,16 @@ func New(ctx context.Context, idCfg *config.IdentityConfig) (daemon.Daemon, erro
 		ListenAddress: idCfg.MetricsServerAddr,
 		SystemdSocket: false,
 		ConfigFile:    "",
-		Files: []string{
-			idCfg.CertFile,
-			idCfg.CaCertFile,
-		},
+		Files: func() []string {
+			files := []string{}
+			if idCfg.CertFile != "" {
+				files = append(files, idCfg.CertFile)
+			}
+			if idCfg.CaCertFile != "" {
+				files = append(files, idCfg.CaCertFile)
+			}
+			return files
+		}(),
 		Directories:           []string{},
 		YAMLs:                 []string{},
 		TrimPathComponents:    0,
@@ -119,7 +125,7 @@ func (ms *metricsService) Start(ctx context.Context) error {
 			log.Info("Stopped metrics exporter server")
 		}()
 
-		if err := daemon.WaitForServerReady(ms.exporter.ListenAddress, false); err != nil {
+		if err := daemon.WaitForServerReady(ms.exporter.ListenAddress, false, false); err != nil {
 			log.Errorf("Failed to confirm metrics exporter server ready: %s", err.Error())
 			return err
 		}
@@ -133,8 +139,11 @@ func (ms *metricsService) Shutdown() {
 	log.Info("Initiating shutdown of metrics exporter daemon ...")
 	close(ms.shutdownChan)
 
-	if ms.exporter != nil && ms.exporterRunning {
-		err := ms.exporter.Shutdown() // context.Background() is used, no timeout. refer to https://github.com/enix/x509-certificate-exporter/blob/33dd533/internal/exporter.go#L111
+	if ms.exporter != nil {
+		// As ms.exporter.Shutdown() can ONLY shutdown gracefully, NO need to check ms.exporterRunning == true
+
+		err := ms.exporter.Shutdown()
+		// context.Background() is used, no timeout. refer to https://github.com/enix/x509-certificate-exporter/blob/33dd533/internal/exporter.go#L111
 		// P.S. Make sure to use the httpChecker to ensure ListenAndServe() is finished before Shutdown() is called. If ListenAndServe() does not finish creating the server object before Shutdown() is called, the internal server field will be nil and Shutdown() be a no-op. ListenAndServe() will block and cause deadlock.
 		if err != nil {
 			log.Errorf("Failed to shutdown metrics exporter server: %s", err.Error())
