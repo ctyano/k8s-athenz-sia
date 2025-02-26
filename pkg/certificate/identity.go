@@ -454,7 +454,7 @@ func PrepareRoleCsrOptions(idCfg *config.IdentityConfig, domain, service string)
 		}
 
 		sans := []string{
-			fmt.Sprintf("%s.%s.%s", service, domainDNSPart, idCfg.DNSSuffix),
+			fmt.Sprintf("%s.%s.%s", service, domainDNSPart, idCfg.RoleCertDNSSuffix),
 		}
 
 		subject := pkix.Name{
