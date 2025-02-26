@@ -488,7 +488,7 @@ func PrepareRoleCsrOptions(idCfg *config.IdentityConfig, domain, service string)
 					*spiffeURI,
 				},
 				EmailAddresses: []string{
-					fmt.Sprintf("%s.%s@%s", domain, service, idCfg.DNSSuffix),
+					fmt.Sprintf("%s.%s@%s", domain, service, idCfg.RoleCertDNSSuffix),
 				},
 			},
 		}
